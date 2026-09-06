@@ -16,7 +16,7 @@ No Next.js, no custom backend server, no different DB/host.
 ## Deployment workflow (push-to-deploy)
 
 The intended workflow is **never localhost**. You push to GitHub, Cloudflare
-Pages auto-deploys, you test against the deployed URL.
+auto-deploys via Workers Build mode, you test against the deployed URL.
 
 1. Push this repo to your GitHub repo (the one created per §1A item 1).
 2. Cloudflare Pages is linked to the GitHub repo (per §1A item 3) and
@@ -27,16 +27,18 @@ Pages auto-deploys, you test against the deployed URL.
    - `VITE_SUPABASE_URL` — Supabase dev project URL
    - `VITE_SUPABASE_ANON_KEY` — Supabase dev project anon key (safe to
      expose per §9; RLS is the real security boundary)
-   - `VITE_PUBLIC_SITE_URL` — your deployed Cloudflare Pages URL
-     (e.g. `https://your-project.pages.dev`); used as the redirect target
-     for Supabase password-reset emails
+   - `VITE_PUBLIC_SITE_URL` — your deployed Cloudflare URL
+     (e.g. `https://student-management-system-app.pages.dev`); used as the
+     redirect target for Supabase password-reset emails
 4. Build settings in Cloudflare Pages:
    - Build command: `npm run build`
-   - Output directory: `dist`
+   - Deploy command: `npx wrangler deploy`
    - Node version: 18 or higher
-5. `public/_redirects` is included for SPA routing — any non-file path
-   serves `/index.html` with HTTP 200 so deep links like `/admin` work
-   on refresh.
+5. SPA routing is handled by `wrangler.jsonc` (committed to repo root) via
+   `assets.not_found_handling: "single-page-application"`. Any non-file
+   path serves `/index.html` so deep links like `/admin` work on refresh.
+   **Do not add a `public/_redirects` file** — it conflicts with this
+   setting and causes an infinite-loop error during deploy.
 
 ## Phase 0 — Setup
 
@@ -128,32 +130,32 @@ Per §6: *"a user can log in and land on a role-specific empty dashboard."*
 school-mgmt/
 ├── index.html
 ├── package.json
-├── vite.config.ts
+├── package-lock.json
+├── vite.config.ts          # Vite + React + @cloudflare/vite-plugin
+├── wrangler.jsonc          # Cloudflare Workers config (SPA routing + project name)
 ├── tsconfig.json
 ├── tsconfig.node.json
 ├── tailwind.config.js
 ├── postcss.config.js
-├── components.json          # shadcn config (default slate base color)
-├── .env.example             # committed template
-├── .env.local               # gitignored, contains dev Supabase creds
+├── components.json         # shadcn config (default slate base color)
+├── .env.example            # committed template
+├── .env.local              # gitignored, contains dev Supabase creds
 ├── .gitignore
 ├── README.md
-├── public/
-│   └── _redirects           # Cloudflare Pages SPA routing fallback
 ├── src/
 │   ├── main.tsx
-│   ├── App.tsx              # router
-│   ├── index.css            # Tailwind + shadcn CSS variables
+│   ├── App.tsx             # router
+│   ├── index.css           # Tailwind + shadcn CSS variables
 │   ├── vite-env.d.ts
 │   ├── lib/
-│   │   ├── supabase.ts      # Supabase client
-│   │   └── utils.ts         # cn() helper
+│   │   ├── supabase.ts     # Supabase client
+│   │   └── utils.ts        # cn() helper
 │   ├── types/
-│   │   └── database.ts      # hand-written Phase 0 types
+│   │   └── database.ts     # hand-written Phase 0 types
 │   ├── contexts/
-│   │   └── AuthContext.tsx  # session + profile loader
+│   │   └── AuthContext.tsx # session + profile loader
 │   ├── components/
-│   │   ├── ui/              # shadcn primitives (button, input, label, card)
+│   │   ├── ui/             # shadcn primitives (button, input, label, card)
 │   │   └── layout/
 │   │       └── AppShell.tsx # top-bar + logout
 │   ├── routes/
@@ -192,3 +194,12 @@ school-mgmt/
 - **`VITE_PUBLIC_SITE_URL`** is set per-environment in Cloudflare Pages
   and is used as the redirect target for password-reset emails so the
   recovery link lands on the deployed site, not localhost.
+- **Cloudflare Workers Build mode** (not legacy Pages mode) is the deploy
+  target. `wrangler.jsonc` at repo root configures the project name
+  (`student-management-system-app` — must match the Cloudflare project
+  name) and SPA routing (`assets.not_found_handling: "single-page-application"`).
+  The `@cloudflare/vite-plugin` (loaded in `vite.config.ts`) processes
+  `wrangler.jsonc` during build and emits `dist/wrangler.json`, which
+  `npx wrangler deploy` consumes. Never add a `public/_redirects` file —
+  it conflicts with the SPA-routing setting and triggers an infinite-loop
+  error during deploy.

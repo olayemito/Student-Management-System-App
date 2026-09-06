@@ -34,6 +34,9 @@ pnpm-debug.log*
 # TypeScript build info
 *.tsbuildinfo
 
+# Cloudflare Wrangler (dev cache + deploy artifacts)
+.wrangler
+
 # Supabase
 # Note: supabase/.env is for the Supabase CLI; we keep our app env in .env.local at the project root
 supabase/.env
