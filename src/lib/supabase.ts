@@ -1,0 +1,21 @@
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "Missing Supabase env vars. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local"
+  );
+}
+
+// Per §9: the anon key being visible in the frontend bundle is expected and correct.
+// RLS policies are the actual security boundary, not key secrecy.
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
