@@ -1,0 +1,41 @@
+# Local environment — do not commit
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist
+dist-ssr
+
+# Dependencies
+node_modules
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite
+.vite
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Supabase
+# Note: supabase/.env is for the Supabase CLI; we keep our app env in .env.local at the project root
+supabase/.env
+supabase/.branches
+supabase/.temp
